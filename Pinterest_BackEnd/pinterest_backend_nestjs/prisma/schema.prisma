@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model cmt_emotion {
+  user_id    Int
+  comment_id Int
+  status     cmt_emotion_status
+  created    DateTime           @default(now()) @db.Timestamp(0)
+  user       user               @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "cmt_emotion_ibfk_1")
+  comment    comment            @relation(fields: [comment_id], references: [comment_id], onDelete: NoAction, onUpdate: NoAction, map: "cmt_emotion_ibfk_2")
+
+  @@id([user_id, comment_id])
+  @@index([comment_id], map: "comment_id")
+}
+
+model comment {
+  comment_id    Int           @id @default(autoincrement())
+  content       String        @db.VarChar(1000)
+  created       DateTime      @default(now()) @db.DateTime(0)
+  parent_id     Int?
+  user_id       Int?
+  image_id      Int?
+  cmt_emotion   cmt_emotion[]
+  user          user?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_1")
+  image         image?        @relation(fields: [image_id], references: [image_id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_2")
+  comment       comment?      @relation("commentTocomment", fields: [parent_id], references: [comment_id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_3")
+  other_comment comment[]     @relation("commentTocomment")
+
+  @@index([image_id], map: "image_id")
+  @@index([parent_id], map: "parent_id")
+  @@index([user_id], map: "user_id")
+}
+
+model image {
+  image_id    Int           @id @default(autoincrement())
+  name        String        @db.VarChar(500)
+  path        String        @db.VarChar(2800)
+  description String?       @db.VarChar(500)
+  created     DateTime?     @default(now()) @db.Timestamp(0)
+  user_id     Int
+  comment     comment[]
+  user        user          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "image_ibfk_1")
+  img_emotion img_emotion[]
+  saved       saved[]
+
+  @@index([user_id], map: "user_id")
+}
+
+model img_emotion {
+  user_id  Int
+  image_id Int
+  status   img_emotion_status
+  created  DateTime           @default(now()) @db.Timestamp(0)
+  user     user               @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "img_emotion_ibfk_1")
+  image    image              @relation(fields: [image_id], references: [image_id], onDelete: NoAction, onUpdate: NoAction, map: "img_emotion_ibfk_2")
+
+  @@id([user_id, image_id])
+  @@index([image_id], map: "image_id")
+}
+
+model saved {
+  saved_id Int      @id @default(autoincrement())
+  user_id  Int?
+  image_id Int?
+  created  DateTime @default(now()) @db.DateTime(0)
+  user     user?    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "saved_ibfk_1")
+  image    image?   @relation(fields: [image_id], references: [image_id], onDelete: NoAction, onUpdate: NoAction, map: "saved_ibfk_2")
+
+  @@index([image_id], map: "image_id")
+  @@index([user_id], map: "user_id")
+}
+
+model user {
+  user_id     Int           @id @default(autoincrement())
+  full_name   String        @db.VarChar(100)
+  birth_day   DateTime?     @db.Date
+  description String?       @db.VarChar(500)
+  email       String        @db.VarChar(100)
+  password    String        @db.VarChar(100)
+  token       String?       @db.VarChar(300)
+  cmt_emotion cmt_emotion[]
+  comment     comment[]
+  image       image[]
+  img_emotion img_emotion[]
+  saved       saved[]
+}
+
+enum cmt_emotion_status {
+  like
+  love
+  wow
+  angry
+  sad
+  haha
+  heart
+}
+
+enum img_emotion_status {
+  like
+  love
+  wow
+  angry
+  sad
+  haha
+  heart
+}
